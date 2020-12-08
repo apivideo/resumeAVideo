@@ -1,0 +1,34 @@
+head
+ 
+body
+  header.header 
+
+    
+    
+    block content
+      h1 Video 
+      iframe(type="text/html", src=videoUrl, width = "960", height="540",frameborder="0", scrollling="no")
+      h1.
+        Video Stats
+      p Your video has #{arrayLength} views.  
+      p 
+      h2 Country list
+      p Your video was watched in #{countryCount} countries!
+        ul
+          each index, val in countryList
+            li= index + ' : ' + val
+      h2 Device list
+      p There are #{deviceCount} devices
+        ul
+          each val, index in deviceList
+            li= index + ' : ' + val
+      h2 os list
+      p There are #{osCount} oses
+        ul
+          each val, index in osList
+            li= index + ' : ' + val
+      h2 browser list
+      p There are #{clientCount} browsers
+        ul
+          each val, index in clientList
+            li= index + ' : ' + val  
