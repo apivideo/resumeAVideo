@@ -89,7 +89,7 @@ app.get('/stats', (req, res) => {
 		  for (const [key, value] of Object.entries(clientList)) {
 			console.log(`${key}: ${value}`);
 		  }
-		  var videoUrl = "http://embed.api.video/vod/" + videoId + "#autoplay";
+		  var videoUrl = "https://embed.api.video/vod/" + videoId + "#autoplay";
 		  return res.render('stats', {videoUrl, arrayLength, countryList, countryCount, deviceList, deviceCount, osList, osCount, clientList, clientCount});
 
 	}).catch((error) => {
