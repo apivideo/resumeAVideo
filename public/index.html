@@ -21,19 +21,21 @@
   		gtag('js', new Date());
   		gtag('config', 'G-N9E9YP1HGF');
 	</script>
-
+	<title>Resume a video</title>
 </head>
 
 <body>
 	
 	<br>
-	<h1>Choose a video to pull analytics</h1>
+	<h1>Dynamic Metadata can be used to return your customers where they left off!</h1>
 	<div id="action__upload">
-		<form id="getVideo" action="/stats" method="get">
+		<form id="getVideo" action="/video" method="get">
+			<label for="userName" >User Name:</label>
+			<input type="text" id="userName" name="userName" value="Doug"><br><br>
 			<select id="videoId" name="chooseVideo">
-				<option value = "vi4blUQJFrYWbaG44NChkH27">Bremen Tuba Beatles</option>
-				<option value = "vi6Xe7No0lZeSkqMvLfOCTLR">Munich Surfing</option>
-				<option value = "vi72GR4D98d541MGFOfcZtII">Barcelona Hokey Pokey</option>
+				<option value = "vi4fvaDG9nqfdMTqRnmZuvlJ">Uploading with Delegated Tokens</option>
+				<option value = "vi3jq9xlqUKJUksfpTvqQ0Eb">Video Analytics Demo</option>
+				<option value = "viUTQTxwvvamBM8CMu218fX">Live Stream Broadcast Demo</option>
 			</select>
 			<br/>
 			<br/>
@@ -42,7 +44,7 @@
 	</div>
 	<div id="footer">
 		This app was created with <a href="https://api.video">api.video</a>.<br/>
-		Get the <a href="https://github.com/dougsillars/videoAnalytics">sample code</a>, and read about <a href="https://a.video/works/who-s-watched-a-video>how we built the demo.</a><br/>
+		Get the <a href="https://github.com/dougsillars/resumeAVideo">sample code</a>, and read about <a href="https://a.video/works/resume-a-video">how we built the demo.</a><br/>
 		More sample apps can be found at <a href="https://a.video">a.video</a>.
 
 	</div>

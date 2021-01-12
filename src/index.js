@@ -12,115 +12,164 @@ app.use(express.static('public'));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.set('view engine','pug');
-const Discord = require('discord.js');
-const discordClient = new Discord.Client();
-// when the client is ready, run this code
-// this event will only trigger one time after logging in
-discordClient.once('ready', () => {
-	console.log('discord Ready!');
-
-});
-
-
+var request = require("request");
 
 
 //apivideo
 const apiVideo = require('@api.video/nodejs-sdk');
-
 
 //if you chnage the key to sandbox or prod - make sure you fix the delegated toekn on the upload page
 const apiVideoKey = process.env.apiProductionKey;
 
 
 // website demo
-//get request is the initial request - load the HTML page with the form
-app.get('/stats', (req, res) => {
+//get request is the initial request - load the HTML page with the video requested
+app.get('/video', (req, res) => {
 	//dont cache the page
 	res.header('Cache-Control', 'no-cache, private, no-store, must-revalidate, max-stale=0, post-check=0, pre-check=0');
 	var videoId = req.query.chooseVideo;
-	console.log(videoId);
+	var userName = req.query.userName;
+	console.log("user", userName);
+	console.log("video", videoId);
 
-	//with the videoID - make an anaytics call
-	const client = new apiVideo.Client({ apiKey: apiVideoKey });
-	let result =client.analyticsVideo.get(videoId);
-	result.then(function(analytics){
-		//analytics results
-		//loop through them all
-		//aggregate the totals
-		var analyticsData = analytics.data;
-		var arrayLength = analyticsData.length;
-		console.log(arrayLength);
-		var country = [];
-		var deviceType=[];
-		var osName = [];
-		var clientName = [];
-		//console.log(analyticsData);
-		//console.log(analyticsData[0]);
-		for(var i = 0; i< arrayLength; i++){
-			country.push(analyticsData[i].location.country);
-			deviceType.push(analyticsData[i].device.type);
-			osName.push(analyticsData[i].os.name);
-			clientName.push(analyticsData[i].client.name);
-		}
+	//with the videoID - make an analytics call
+	//the analytics API does not support searching with metadata, so we have to use the API
+	//also, the API will only list in ASC order - and we want the newest session.
+	//in general, there will not be > 100 sesstions for a video/userName combination
+	//but in a test app, perhaps there will be.
 
-		//now we have arrays with countyr, device, browser
-		//now we can add them up
-		var countryList = createObject(country);
-		var deviceList = createObject(deviceType);
-		var osList = createObject(osName);
-		var clientList = createObject(clientName);
 
-		console.log("results");
-		var countryCount = Object.keys(countryList).length;
-		var deviceCount = Object.keys(deviceList).length;
-		var osCount = Object.keys(osList).length;
-		var clientCount = Object.keys(clientList).length;
-		console.log("country Count", countryCount);
+	//first we must authenticate
+	var authOptions = {
+		method: 'POST',
+		url: 'https://ws.api.video/auth/api-key',
+		headers: {
+			accept: 'application/json'
+			
+		},
+		json: {"apiKey":apiVideoKey}
+
+	}
+	//this exposes the api key - so hiding
+	//console.log(authOptions);	
+	request(authOptions, function (error, response, body) {
+		if (error) throw new Error(error);
+		//this will give me the api key
+		//console.log("body", body);
+		var authToken = body.access_token;
+		console.log(authToken);
 		
-		for (const [key, value] of Object.entries(countryList)) {
-			console.log(`${key}: ${value}`);
-		  }
-		  for (const [key, value] of Object.entries(deviceList)) {
-			console.log(`${key}: ${value}`);
-		  }
-		  for (const [key, value] of Object.entries(osList)) {
-			console.log(`${key}: ${value}`);
-		  }
-		  for (const [key, value] of Object.entries(clientList)) {
-			console.log(`${key}: ${value}`);
-		  }
-		  var videoUrl = "https://embed.api.video/vod/" + videoId + "#autoplay";
-		  return res.render('stats', {videoUrl, arrayLength, countryList, countryCount, deviceList, deviceCount, osList, osCount, clientList, clientCount});
+		//now lets look at the video in question
+		//with the Username metadata
 
-	}).catch((error) => {
-		console.log(error);
+		
+		var firstSessionQuery = {
+			method: 'GET',
+			url: 'https://ws.api.video/analytics/videos/'+videoId+'?currentPage=1&pageSize=1&metadata[userName]='+userName,
+			headers: {
+				accept: 'application/json',
+				authorization: 'Bearer ' +authToken
+			}
+		}
+		request(firstSessionQuery, function (error, response, body) {
+			if (error) throw new Error(error);
+			body = JSON.parse(body);
+			console.log("body", body);
+			console.log("data", body.data[0]);
+			console.log("pagination", body.pagination);
+			var sessionCount = body.pagination.itemsTotal;
+			console.log("items total", body.pagination.itemsTotal);
+			if (sessionCount>0){
+				//if there is just one session, we have everything we need right now
+				if(sessionCount ==1){
+					console.log(body.data[0]);
+					var sessionId = body.data[0].session.sessionId;
+					console.log(sessionId);
+					//now we can access this sessionId, and get the last time in the session
+					getSession(authToken, videoId, sessionId, userName);
+
+				}else{
+					//we need another query to get the "last session"
+				
+					var lastSessionCounter = body.pagination.itemsTotal;
+					console.log("pagiation:", body.pagination.links);
+					//links count can vary - we want the last one in the array
+					var linksLength = body.pagination.links.length;
+					console.log("link aray length", linksLength);
+					var lastUri = decodeURI(body.pagination.links[linksLength-1].uri);
+					console.log("number of sessions with this username:", lastSessionCounter);
+					console.log("uri", lastUri);
+					//request that last session
+					var lastSessionQuery = {
+						method: 'GET',
+						url: 'https://ws.api.video' +lastUri,
+						headers: {
+							accept: 'application/json',
+							authorization: 'Bearer ' +authToken
+						}
+					}
+					request(lastSessionQuery, function (error, response, body) {
+						if (error) throw new Error(error);
+						body = JSON.parse(body);
+						console.log("body", body);
+						console.log(body.data[0]);
+						var sessionId = body.data[0].session.sessionId;
+						console.log(sessionId);
+						//now we can access this sessionId, and get the last time in the session
+						getSession(authToken, videoId, sessionId, userName);
+						
+					});
+				}
+
+			}else{
+				//no sesstions for this user
+				//return the video at time =0
+				var videoUrl = 'https://embed.api.video/vod/'+videoId+'?metadata[userName]='+userName+'#autoplay';
+				return res.render('video', {videoUrl});
+				
+			}
+
+		});
+
+
+
 	});
 	
+
+	function getSession (authToken, videoId, sessionId, userName) {
+		//lets get 100 session activities - i doubt there will ever be that many - (or more than 100)
+		var getSession = {
+			method: 'GET',
+			url: 'https://ws.api.video/analytics/sessions/'+sessionId+'/events?currentPage=1&pageSize=100',
+			headers: {
+				accept: 'application/json',
+				authorization: 'Bearer ' +authToken
+			}
+		}
+		request(getSession, function (error, response, body) {
+			if (error) throw new Error(error);
+			body = JSON.parse(body);
+			console.log("sessions", body.data);
+			var numberofEvents = body.data.length;
+			console.log("num events", numberofEvents);
+			var lastTimeRecorded = body.data[numberofEvents-1].at;
+			console.log("last event time", lastTimeRecorded);
+	
+			var videoUrl = 'https://embed.api.video/vod/'+videoId+'?metadata[userName]='+userName+'#autoplay;t='+lastTimeRecorded;
+					return res.render('video', {videoUrl});
+	
+		});
+	
+	}
 	
 	  
 });
 
-function createObject(array){
-   var obj = {};
-   var arrayLength = array.length;
-   for(var j = 0; j< arrayLength; j++){
-	var arrayName = array[j];			
-	if(obj.hasOwnProperty(arrayName)){
-		//if key already exists
-		//add one to the count
-		obj[arrayName] ++;
-	}else{
-		//key does not exist
-		//add and vide value 1
-		obj[arrayName] = 1;
-	}
-   }
-   return obj;
-}
 
-//testing on 3005
-app.listen(3005, () =>
-  console.log('Example app listening on port 3005!'),
+
+//testing on 3006
+app.listen(3006, () =>
+  console.log('Example app listening on port 3006!'),
 );
 process.on('uncaughtException', function(err) {
     // handle the error safely
