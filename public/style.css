@@ -4,6 +4,14 @@ body {background-color: gray;
     text-align: center;
     
   }
+#intro{
+  padding: 10px;
+  font-size:x-large;
+  margin:auto;
+  text-align: center;
+  line-height: 1.8;
+  width:50%;
+}
   
 #action__upload{
     margin: auto;
@@ -29,4 +37,11 @@ body {background-color: gray;
     border-radius: 15px;
     font-size: xx-large;
   }
- 
+  #footer{
+    padding: 10px;
+    font-size:x-large;
+    margin:auto;
+    text-align: center;
+    line-height: 1.8;
+    width:50%;
+  }

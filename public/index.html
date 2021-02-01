@@ -28,10 +28,16 @@
 	
 	<br>
 	<h1>Dynamic Metadata can be used to return your customers where they left off!</h1>
+	<br/>
+	<p id = "intro">Enter your name, and pick a video. 
+		<a href="https://api.video">api.video</a> will look up the video, and see if your name has history watching the video.   
+		If there is a history, the video will begin at the last known point.   <br/>
+		If you are a new viewer, the video will commence at time =0.</p>
 	<div id="action__upload">
 		<form id="getVideo" action="/video" method="get">
 			<label for="userName" >User Name:</label>
 			<input type="text" id="userName" name="userName" value="Doug"><br><br>
+			<label for="chooseVideo" >Video:</label>
 			<select id="videoId" name="chooseVideo">
 				<option value = "vi4fvaDG9nqfdMTqRnmZuvlJ">Uploading with Delegated Tokens</option>
 				<option value = "vi3jq9xlqUKJUksfpTvqQ0Eb">Video Analytics Demo</option>
