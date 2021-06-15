@@ -16,7 +16,7 @@ var request = require("request");
 
 
 //apivideo
-const apiVideo = require('@api.video/nodejs-sdk');
+const apiVideoClient = require('@api.video/nodejs-client');
 
 //if you chnage the key to sandbox or prod - make sure you fix the delegated toekn on the upload page
 const apiVideoKey = process.env.apiProductionKey;
@@ -29,9 +29,54 @@ app.get('/video', (req, res) => {
 	res.header('Cache-Control', 'no-cache, private, no-store, must-revalidate, max-stale=0, post-check=0, pre-check=0');
 	var videoId = req.query.chooseVideo;
 	var userName = req.query.userName;
-	console.log("user", userName);
-	console.log("video", videoId);
+	var metadata = {'userName': userName};
+	var currentPage = '1'; // Choose the number of search results to return per page. Minimum value: 1
+    var pageSize = '1'; // Results per page. Allowed values 1-100, default is 25.
 
+	//first we'll get the session data for the video and the metadata userName
+	var params = { videoId, metadata, currentPage, pageSize};
+	console.log("params",params)
+	const client = new apiVideoClient({apiKey: apiVideoKey});
+	const result = client.rawStatistics.listVideoSessions(params);
+	result.then(function(videos) {
+	//	console.log("Allsessions that match", videos);
+		const numberSessions = videos.pagination.itemsTotal;
+		console.log("number of results: ", numberSessions);
+		if(numberSessions >0){
+			currentPage = numberSessions;
+			const lastSessionParams = { videoId, metadata, currentPage, pageSize};
+			console.log("lastSessionParams", lastSessionParams);
+			const lastSessionResult = client.rawStatistics.listVideoSessions(lastSessionParams);
+			lastSessionResult.then(function(lastSession) {
+				console.log("lastSesson: ", lastSession);
+				//this is the last session
+				var sessionId =  lastSession.data[0].session.sessionId;
+				currentPage = 1;
+				pageSize = 100;
+				var sessionParams = {sessionId, currentPage, pageSize};
+				console.log("the last session is: ", sessionId);
+				const sessionData = client.rawStatistics.listSessionEvents(sessionParams);
+				sessionData.then( function(lastSessionData) {
+					//this is the session data
+					console.log("session events", lastSessionData);
+					var numberOfEvents = lastSessionData.pagination.itemsTotal;
+					console.log("sessionevents", numberOfEvents);
+					var lastTimeRecorded  = lastSessionData.data[numberOfEvents -1].at;
+					console.log("lastTimeRecorded", lastTimeRecorded);
+					var videoUrl = 'https://embed.api.video/vod/'+videoId+'?metadata[userName]='+userName+'#autoplay;t='+lastTimeRecorded;
+						return res.render('video', {videoUrl});
+				});
+
+			});
+		}else{
+			var videoUrl = 'https://embed.api.video/vod/'+videoId+'?metadata[userName]='+userName+'#autoplay';
+						return res.render('video', {videoUrl});
+		}	
+	});
+	
+
+	//this is the SDK code.  well just API calls really
+	/*
 	//with the videoID - make an analytics call
 	//the analytics API does not support searching with metadata, so we have to use the API
 	//also, the API will only list in ASC order - and we want the newest session.
@@ -134,7 +179,7 @@ app.get('/video', (req, res) => {
 
 
 	});
-	
+*/	
 
 	function getSession (authToken, videoId, sessionId, userName) {
 		//lets get 100 session activities - i doubt there will ever be that many - (or more than 100)
