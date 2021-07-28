@@ -213,7 +213,7 @@ app.get('/video', (req, res) => {
 
 
 //testing on 3006
-app.listen(3006, () =>
+app.listen(process.env.PORT ||  3006, () =>
   console.log('Example app listening on port 3006!'),
 );
 process.on('uncaughtException', function(err) {
