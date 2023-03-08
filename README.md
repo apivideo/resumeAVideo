@@ -13,7 +13,7 @@
 
 # resume a video
 
-This demo uses NodeJS and [API.video](https://api.video) to resume a video from where the viewer left off.
+This demo uses NodeJS and [api.video](https://api.video) to resume a video from where the viewer left off.
 
 Requires NodeJS.
 
